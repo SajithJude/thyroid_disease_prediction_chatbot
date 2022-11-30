@@ -1,4 +1,3 @@
-streamlit-chat==0.0.2.1
 streamlit
+torch
 transformers
-torch==1.13.0

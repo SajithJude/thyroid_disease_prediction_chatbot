@@ -1,42 +1,30 @@
 import streamlit as st
-from streamlit_chat import message as st_message
-from transformers import BlenderbotTokenizer
-from transformers import BlenderbotForConditionalGeneration
+import numpy as np
+from transformers import BertTokenizer, BertForSequenceClassification
+import torch
+
+@st.cache(allow_output_mutation=True)
+def get_model():
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    model = BertForSequenceClassification.from_pretrained("pnichite/YTFineTuneBert")
+    return tokenizer,model
 
 
-@st.experimental_singleton
-def get_models():
-    # it may be necessary for other frameworks to cache the model
-    # seems pytorch keeps an internal state of the conversation
-    model_name = "BitanBiswas/depression-detection-bert"
-    tokenizer = BlenderbotTokenizer.from_pretrained(model_name)
-    model = BlenderbotForConditionalGeneration.from_pretrained(model_name)
-    return tokenizer, model
+tokenizer,model = get_model()
 
+user_input = st.text_area('Enter Text to Analyze')
+button = st.button("Analyze")
 
-if "history" not in st.session_state:
-    st.session_state.history = []
+d = {
+    
+  1:'Toxic',
+  0:'Non Toxic'
+}
 
-st.title("Conversational A.I chatbot using BERT")
-
-
-def generate_answer():
-    tokenizer, model = get_models()
-    user_message = st.session_state.input_text
-    inputs = tokenizer(st.session_state.input_text, return_tensors="pt")
-    result = model.generate(**inputs)
-    message_bot = tokenizer.decode(
-        result[0], skip_special_tokens=True
-    )  # .replace("<s>", "").replace("</s>", "")
-
-    st.session_state.history.append({"message": user_message, "is_user": True})
-    st.session_state.history.append({"message": message_bot, "is_user": False})
-
-
-st.text_input("Talk to the bot", key="input_text", on_change=generate_answer)
-
-for chat in st.session_state.history:
-    st_message(**chat)  # unpacking
-# Footer
-
-
+if user_input and button :
+    test_sample = tokenizer([user_input], padding=True, truncation=True, max_length=512,return_tensors='pt')
+    # test_sample
+    output = model(**test_sample)
+    st.write("Logits: ",output.logits)
+    y_pred = np.argmax(output.logits.detach().numpy(),axis=1)
+    st.write("Prediction: ",d[y_pred[0]])
