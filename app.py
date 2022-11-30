@@ -18,7 +18,7 @@ button = st.button("Analyze")
 d = {
     
   1:'Depressed',
-  0:'Low signs of depression'
+  0:'No signs of depression'
 }
 
 if user_input and button :
